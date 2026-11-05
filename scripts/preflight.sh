@@ -26,12 +26,17 @@ ROOT=$(git rev-parse --show-toplevel); cd "$ROOT" || exit 1
 echo "점검 위치: $ROOT"
 
 echo "1) 제공 문서 보존"
-for f in README.md TASK.md; do
+for f in README.md README.*.md TASK.md; do
   [ -f "$f" ] || continue
   first=$(git log --diff-filter=A --format=%H -- "$f" 2>/dev/null | tail -1)
   if [ -z "$first" ]; then wa "$f 가 아직 커밋되지 않아 원본과 비교할 수 없음"; continue; fi
   if git diff --quiet "$first" -- "$f"; then ok "$f 가 처음 커밋된 상태 그대로"; else no "$f 가 처음 커밋 이후 바뀜 (제공 지시문은 수정 금지)"; fi
 done
+
+if [ -f REQ_CHECK.md ]; then
+  m=$(grep -cE "\|[[:space:]]*없음[[:space:]]*\|" REQ_CHECK.md)
+  [ "$m" -eq 0 ] && ok "REQ_CHECK.md 에 \"없음\" 항목 없음" || wa "REQ_CHECK.md 에 \"없음\" 항목 ${m}개 (HOW_TO_RUN.md 7번에 이유 적기)"
+fi
 
 echo "2) 필수 문서"
 for f in HOW_TO_RUN.md AI_COLLABORATION.md; do
